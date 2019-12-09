@@ -1,3 +1,4 @@
+from collections import deque
 import math
 
 masses = [ 142156, 108763, 77236, 78186, 110145, 126414, 115436, 133275,
@@ -16,8 +17,29 @@ masses = [ 142156, 108763, 77236, 78186, 110145, 126414, 115436, 133275,
 def part11(masses):
     return sum([math.floor(x / 3.0) - 2 for x in masses])
 
+def part12(masses):
+    masses = deque(masses)
+    total = 0
+    while masses:
+        m = masses.popleft()
+        f = math.floor(m / 3.) - 2
+        if f > 0:
+            total += f
+            masses.appendleft(f)
+    return total
+
+def test():
+    assert part11(masses) == 3318632
+    assert part12([14]) == 2
+    assert part12([1969]) == 966
+    assert part12([100756]) == 50346
+    assert part12(masses) == 4975084
+
 def main():
     print("1/1", part11(masses))
+    print("1/2", part12(masses))
+
+    test()
 
 
 if __name__ == "__main__":
