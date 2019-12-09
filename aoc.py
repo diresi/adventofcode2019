@@ -11,6 +11,9 @@ def main():
     import day4
     day4.main()
 
+    import day5
+    day5.main()
+
 
 if __name__ == "__main__":
     import argparse
