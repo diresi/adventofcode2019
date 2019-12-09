@@ -31,21 +31,6 @@ def mk_segments(steps):
     return lines
 
 def intersection_point(seg1, seg2):
-    # # assumption: segments don't overlap, i.e. cross on more than one
-    # # consecutive point
-
-    # # we only deal with horizontal and vertical lines, so only horizontal and
-    # # vertical lines can possibly cross
-    # seg1_is_vert = seg1[0][0] == seg1[1][0]
-    # seg2_is_vert = seg2[0][0] == seg2[1][0]
-    # if seg1_is_vert and seg2_is_vert:
-    #     return False
-
-    # seg1_is_horz = seg1[0][1] == seg1[1][1]
-    # seg2_is_horz = seg2[0][1] == seg2[1][1]
-    # if seg1_is_horz and seg2_is_vert:
-    #     return False
-
     # along each axis, we must have points of the same segment in the middle
     # and the extremes, e.g. (seg1, seg2, seg2, seg1) or the other way round
     points_by_x = sorted(seg1 + seg2, key=lambda pt: pt[0])
@@ -66,46 +51,81 @@ def intersection_point(seg1, seg2):
     # middle points
     return (points_by_x[1][0], points_by_y[1][1])
 
+def find_wire_intersections(wire1, wire2):
+    steps_a = 0
+    for seg_a in wire1:
+        steps_a += dist(*seg_a)
 
-def find_crossing_distance(wires):
+        steps_b = 0
+        for seg_b in wire2:
+            steps_b += dist(*seg_b)
+
+            pt = intersection_point(seg_a, seg_b)
+            if not pt:
+                continue
+            # the intersection isn't necessarily at an endpoint (this function
+            # might even fail if so :))
+            s_a = steps_a - dist(pt, seg_a[1])
+            s_b = steps_b - dist(pt, seg_b[1])
+            yield (pt, s_a, s_b)
+
+def find_min_crossing_distance(wires):
     lines = [mk_segments(iter_steps(wire)) for wire in wires]
+    assert len(lines) == 2 # this code only works for 2 wires :)
 
     # we need to find intersections between all the lines ...
     min_d = None
-    for i, line_a in enumerate(lines):
-        for j, line_b in enumerate(lines):
-            # skip same lines
-            if i==j:
-                continue
-            for seg_a in line_a:
-                for seg_b in line_b:
-                    pt = intersection_point(seg_a, seg_b)
-                    if not pt:
-                        continue
-                    d = dist(pt) # default is dist to origin
-                    # None or crossings at the origin are ignored
-                    if d and min_d is None or d < min_d:
-                        min_d = d
+
+    for pt, _, _ in find_wire_intersections(lines[0], lines[1]):
+        d = dist(pt) # default is dist to origin
+        # None or crossings at the origin are ignored
+        if d and min_d is None or d < min_d:
+            min_d = d
+
     return min_d
 
 
+def find_min_crossing_steps(wires):
+    lines = [mk_segments(iter_steps(wire)) for wire in wires]
+    assert len(lines) == 2 # this code only works for 2 wires :)
+
+    # we need to find intersections between all the lines ...
+    min_steps = None
+
+    for pt, steps_a, steps_b in find_wire_intersections(lines[0], lines[1]):
+        steps = steps_a + steps_b
+        if not min_steps or steps < min_steps:
+            min_steps = steps
+
+    return min_steps
+
+
 def test():
-    wires = ["R8,U5,L5,D3", "U7,R6,D4,L4"]
-    assert find_crossing_distance(wires) == 6
+    wires1 = ["R8,U5,L5,D3", "U7,R6,D4,L4"]
+    assert find_min_crossing_distance(wires1) == 6
 
-    wires = ["R75,D30,R83,U83,L12,D49,R71,U7,L72",
+    wires2 = ["R75,D30,R83,U83,L12,D49,R71,U7,L72",
              "U62,R66,U55,R34,D71,R55,D58,R83"]
-    assert find_crossing_distance(wires) == 159
+    assert find_min_crossing_distance(wires2) == 159
 
-    wires = ["R98,U47,R26,D63,R33,U87,L62,D20,R33,U53,R51",
+    wires3 = ["R98,U47,R26,D63,R33,U87,L62,D20,R33,U53,R51",
              "U98,R91,D20,R16,D67,R40,U7,R15,U6,R7"]
-    assert find_crossing_distance(wires) == 135
+    assert find_min_crossing_distance(wires3) == 135
 
-    assert find_crossing_distance(WIRES) == 303
+    assert find_min_crossing_distance(WIRES) == 303
+
+    # min combined steps. isn't that always the first crossing?
+    assert find_min_crossing_steps(wires1) == 30
+    assert find_min_crossing_steps(wires2) == 610
+    assert find_min_crossing_steps(wires3) == 410
+    assert find_min_crossing_steps(WIRES) == 11222
 
 def main():
-    res = find_crossing_distance(WIRES)
+    res = find_min_crossing_distance(WIRES)
     print("day 3/1", res)
+
+    res = find_min_crossing_steps(WIRES)
+    print("day 3/2", res)
 
     test()
 
