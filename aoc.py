@@ -1,6 +1,6 @@
 def main():
-    #import day1
-    #day1.main()
+    import day1
+    day1.main()
 
     import day2
     day2.main()

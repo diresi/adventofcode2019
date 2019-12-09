@@ -24,18 +24,37 @@ def compute(program):
 
     return program[0]
 
-def restore(program):
+def restore(program, noun, verb):
     program = list(program)
-    program[1] = 12
-    program[2] = 2
+    program[1] = noun
+    program[2] = verb
     return program
 
+def provide_number(lb=0, ub=99):
+    used = set()
+    n = random.randint(lb, ub)
+    yield n
+    while True:
+        used.add(n)
+        gg
+
+def search(program, answer):
+    for noun in range(100):
+        for verb in range(100):
+            if compute(restore(program, noun, verb)) == answer:
+                return noun, verb
+    raise Exception("brute force failed")
+
 def test():
-    assert compute(restore(PROGRAM)) == 5534943
+    assert compute(restore(PROGRAM, 12, 2)) == 5534943
+    assert search(PROGRAM, 19690720) == (76, 3)
 
 def main():
-    res = compute(restore(PROGRAM))
+    res = compute(restore(PROGRAM, 12, 2))
     print("day 2/1", res)
+
+    noun, verb = search(PROGRAM, 19690720)
+    print("day 2/2, noun=%s, verb=%s, answer=%s" % (noun, verb, 100 * noun + verb))
 
     test()
 
