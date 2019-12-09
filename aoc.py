@@ -14,10 +14,10 @@ masses = [ 142156, 108763, 77236, 78186, 110145, 126414, 115436, 133275,
         113240, 96729, 68516, 74635, 126951, 138948, 88312, 101477, 129730,
         93816, ]
 
-def part11(masses):
+def day11(masses):
     return sum([math.floor(x / 3.0) - 2 for x in masses])
 
-def part12(masses):
+def day12(masses):
     masses = deque(masses)
     total = 0
     while masses:
@@ -29,15 +29,15 @@ def part12(masses):
     return total
 
 def test():
-    assert part11(masses) == 3318632
-    assert part12([14]) == 2
-    assert part12([1969]) == 966
-    assert part12([100756]) == 50346
-    assert part12(masses) == 4975084
+    assert day11(masses) == 3318632
+    assert day12([14]) == 2
+    assert day12([1969]) == 966
+    assert day12([100756]) == 50346
+    assert day12(masses) == 4975084
 
 def main():
-    print("1/1", part11(masses))
-    print("1/2", part12(masses))
+    print("day 1/1", day11(masses))
+    print("day 1/2", day12(masses))
 
     test()
 
