@@ -20,6 +20,9 @@ def main():
     import day7
     day7.main()
 
+    import day8
+    day8.main()
+
 
 if __name__ == "__main__":
     import argparse
