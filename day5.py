@@ -8,19 +8,21 @@ class Intcode(_Intcode):
     def __init__(self, program, inputs=None, outputs=None):
         super(Intcode, self).__init__(program)
         self.inputs = inputs or []
-        self._inputs = iter(self.inputs)
+        self._in_idx = 0
         self.outputs = outputs or []
 
     def reset(self, inputs=None, outputs=None, *a, **kw):
         super(Intcode, self).reset(*a, **kw)
         if inputs is not None:
             self.inputs = inputs
-        self._inputs = iter(self.inputs)
+        self._in_idx = 0
         self.outputs = outputs or []
         return self
 
     def read_input(self):
-        return next(self._inputs)
+        val = self.inputs[self._in_idx]
+        self._in_idx += 1
+        return val
 
     def write_output(self, x):
         self.outputs.append(x)
@@ -64,9 +66,6 @@ class IntcodeWithAddressing(Intcode):
         ip += 1
 
         instr = self.ops.get(op)
-        if self.is_sentinel(instr):
-            return instr
-
         meth, pcount, has_output = instr
         params = []
 
