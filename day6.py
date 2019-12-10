@@ -1660,14 +1660,20 @@ XQQ)W94
 """
 
 def mk_dag(txt):
-    g = defaultdict(set)
+    g = defaultdict(lambda: (set(), set()))
     for line in txt.splitlines():
         line = line.strip()
         if not line:
             continue
         parts = line.split(")")
         for i in range(len(parts)-1):
-            g[parts[i]].add(parts[i+1])
+            # add child-edges
+            g[parts[i]][1].add(parts[i+1])
+
+    # populate parent-edges
+    for par, entry in list(g.items()):
+        for kid in entry[1]:
+            g[kid][0].add(par)
     return g
 
 
@@ -1686,8 +1692,8 @@ def visit(g, visitor, start="COM", dfs=False):
 
         # on with visiting code, let the visitor decide if we should continue
         # or not
-        next_nodes = g[n]
-        if not visitor(n, next_nodes):
+        prev_nodes, next_nodes = g[n]
+        if not visitor(n, prev_nodes, next_nodes):
             break
 
         if dfs:
@@ -1698,31 +1704,90 @@ def visit(g, visitor, start="COM", dfs=False):
 
 def sum_all_depths(g, start="COM"):
     depths = defaultdict(int)
-    def visitor(n, next_nodes):
+    def visitor(n, _, next_nodes):
         depths.update(dict.fromkeys(next_nodes, depths[n] + 1))
         return True
     visit(g, visitor, start)
     return sum(depths.values())
 
+
+def shortest_paths(g, start="COM"):
+    dists = {(start, start):0}
+
+    todo = deque([start])
+    seen = set()
+    while todo:
+        s = todo.popleft()
+        if s in seen:
+            continue
+        seen.add(s)
+
+        my_dist = dists[(start, s)] + 1
+
+        neighbors = g[s]
+        neighbors = neighbors[0] | neighbors[1]
+        for n in neighbors:
+            cur_dist = dists.get((start, n))
+            if cur_dist is None or cur_dist > my_dist:
+                dists[(start, n)] = my_dist
+
+        todo.extendleft(neighbors)
+
+    return dists
+
+
+def shortest_path(g, a, b):
+    dists = shortest_paths(g, a)
+    return dists[(a, b)]    # KeyError if not connected
+
+
+def orbit_hops(g, a, b):
+    # we need 2 less orbit hops since a and b will then orbit the same object
+    # (i.e, keep a distance of 2).
+    # note that the shortest_path() is 1 if a and b orbit each other and 2 if
+    # they're already orbiting the same object.
+    return shortest_path(g, a, b) - 2
+
+
 def test():
     graph = """COM)B
-B)C
-C)D
-D)E
-E)F
-B)G
-G)H
-D)I
-E)J
-J)K
-K)L
-"""
+            B)C
+            C)D
+            D)E
+            E)F
+            B)G
+            G)H
+            D)I
+            E)J
+            J)K
+            K)L
+            """
     assert sum_all_depths(mk_dag(graph)) == 42
     assert sum_all_depths(mk_dag(GRAPH)) == 271151
 
+    graph = """
+            COM)B
+            B)C
+            C)D
+            D)E
+            E)F
+            B)G
+            G)H
+            D)I
+            E)J
+            J)K
+            K)L
+            K)YOU
+            I)SAN
+            """
+    assert shortest_path(mk_dag(graph), "YOU", "SAN") == 6
+    assert orbit_hops(mk_dag(graph), "YOU", "SAN") == 4
+    assert orbit_hops(mk_dag(GRAPH), "YOU", "SAN") == 388
 
 def main():
-    print("day 6/1", sum_all_depths(mk_dag(GRAPH)))
+    g = mk_dag(GRAPH)
+    print("day 6/1", sum_all_depths(g))
+    print("day 6/2", orbit_hops(g, "YOU", "SAN"))
 
     test()
 
