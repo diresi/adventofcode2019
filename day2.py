@@ -64,27 +64,29 @@ class Intcode(object):
 
         return self.program[0]
 
-    def restore(self, noun, verb):
+    def reset(self, noun=None, verb=None):
         self.ip = 0
         self.program = list(self._program)
-        self.program[1] = noun
-        self.program[2] = verb
+        if noun is not None:
+            self.program[1] = noun
+        if verb is not None:
+            self.program[2] = verb
         return self
 
 def search(program, answer):
     vm = Intcode(program)
     for noun in range(100):
         for verb in range(100):
-            if vm.restore(noun, verb).compute() == answer:
+            if vm.reset(noun, verb).compute() == answer:
                 return noun, verb
     raise Exception("brute force failed")
 
 def test():
-    assert Intcode(PROGRAM).restore(12, 2).compute() == 5534943
+    assert Intcode(PROGRAM).reset(12, 2).compute() == 5534943
     assert search(PROGRAM, 19690720) == (76, 3)
 
 def main():
-    res = Intcode(PROGRAM).restore(12, 2).compute()
+    res = Intcode(PROGRAM).reset(12, 2).compute()
     print("day 2/1", res)
 
     noun, verb = search(PROGRAM, 19690720)

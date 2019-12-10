@@ -5,18 +5,22 @@ PROGRAM = [3,225,1,225,6,6,1100,1,238,225,104,0,1101,65,73,225,1101,37,7,225,110
 class Intcode(_Intcode):
     ops = dict(_Intcode.ops)
 
-    def __init__(self, program, inputs = None, outputs=None):
+    def __init__(self, program, inputs=None, outputs=None):
         super(Intcode, self).__init__(program)
-        self._inputs = inputs or []
-        self.inputs = iter(self._inputs)
+        self.inputs = inputs or []
+        self._inputs = iter(self.inputs)
         self.outputs = outputs or []
 
-    def restore(self, *a, **kw):
-        super(Intcode, self).restore(*a, **kw)
-        self.inputs = iter(self._inputs)
+    def reset(self, inputs=None, outputs=None, *a, **kw):
+        super(Intcode, self).reset(*a, **kw)
+        if inputs is not None:
+            self.inputs = inputs
+        self._inputs = iter(self.inputs)
+        self.outputs = outputs or []
+        return self
 
     def read_input(self):
-        return next(self.inputs)
+        return next(self._inputs)
 
     def write_output(self, x):
         self.outputs.append(x)
@@ -28,6 +32,25 @@ class Intcode(_Intcode):
     def output(self, a):
         self.write_output(a)
     ops[4] = (output, 1, False)
+
+    def jump_if_true(self, a, b):
+        if a:
+            self.ip = b
+    ops[5] = (jump_if_true, 2, False)
+
+    def jump_if_false(self, a, b):
+        if not a:
+            self.ip = b
+    ops[6] = (jump_if_false, 2, False)
+
+    def less_than(self, a, b):
+        return 1 if a < b else 0
+    ops[7] =(less_than, 2, True)
+
+    def equals(self, a, b):
+        return 1 if a == b else 0
+    ops[8] =(equals, 2, True)
+
 
 class IntcodeWithAddressing(Intcode):
     def next_instr(self):
@@ -95,6 +118,61 @@ def test():
     assert all(x == 0 for x in vm.outputs[:-1])
     assert vm.outputs[-1] == 14522484
 
+    vm = IntcodeWithAddressing([3,9,8,9,10,9,4,9,99,-1,8])
+    for x in range(10):
+        vm.reset([x])
+        vm.compute()
+        exp = 1 if x == 8 else 0
+        assert [exp] == vm.outputs
+
+    vm = IntcodeWithAddressing([3,9,7,9,10,9,4,9,99,-1,8])
+    for x in range(10):
+        vm.reset([x])
+        vm.compute()
+        exp = 1 if x < 8 else 0
+        assert [exp] == vm.outputs
+
+    vm = IntcodeWithAddressing([3,3,1108,-1,8,3,4,3,99])
+    for x in range(10):
+        vm.reset([x])
+        vm.compute()
+        exp = 1 if x == 8 else 0
+        assert [exp] == vm.outputs
+
+    vm = IntcodeWithAddressing([3,3,1107,-1,8,3,4,3,99])
+    for x in range(10):
+        vm.reset([x])
+        vm.compute()
+        exp = 1 if x < 8 else 0
+        assert [exp] == vm.outputs
+
+    vm = IntcodeWithAddressing([3,12,6,12,15,1,13,14,13,4,13,99,-1,0,1,9])
+    for x in [-1, 0, 1]:
+        vm.reset([x])
+        vm.compute()
+        exp = 0 if x == 0 else 1
+        assert [exp] == vm.outputs
+
+    vm = IntcodeWithAddressing([3,3,1105,-1,9,1101,0,0,12,4,12,99,1])
+    for x in [-1, 0, 1]:
+        vm.reset([x])
+        vm.compute()
+        exp = 0 if x == 0 else 1
+        assert [exp] == vm.outputs
+
+    program = [3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,
+            1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104,
+            999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99]
+    vm = IntcodeWithAddressing(program)
+    for x, exp in [(7, 999), (8, 1000), (9, 1001)]:
+        vm.reset([x])
+        vm.compute()
+        assert [exp] == vm.outputs
+
+    vm = IntcodeWithAddressing(PROGRAM, [5])
+    vm.compute()
+    assert vm.outputs == [4655956]
+
 def main():
     vm = IntcodeWithAddressing(PROGRAM, [1])
     # vm.verbose = True
@@ -104,7 +182,9 @@ def main():
     vm.compute()
     print("day 5/1", vm.outputs[:-1], vm.outputs[-1])
 
-    print("day 5/2", )
+    vm.reset([5])
+    vm.compute()
+    print("day 5/2", vm.outputs[:-1], vm.outputs[-1])
 
     test()
 
