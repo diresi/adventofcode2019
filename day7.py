@@ -1,50 +1,15 @@
 import itertools
-from day5 import IntcodeWithAddressing
+from intcode import Intcode
 
 PROGRAM = [3,8,1001,8,10,8,105,1,0,0,21,46,55,68,89,110,191,272,353,434,99999,3,9,1002,9,3,9,1001,9,3,9,102,4,9,9,101,4,9,9,1002,9,5,9,4,9,99,3,9,102,3,9,9,4,9,99,3,9,1001,9,5,9,102,4,9,9,4,9,99,3,9,1001,9,5,9,1002,9,2,9,1001,9,5,9,1002,9,3,9,4,9,99,3,9,101,3,9,9,102,3,9,9,101,3,9,9,1002,9,4,9,4,9,99,3,9,1001,9,1,9,4,9,3,9,1001,9,1,9,4,9,3,9,102,2,9,9,4,9,3,9,1001,9,2,9,4,9,3,9,1001,9,2,9,4,9,3,9,1002,9,2,9,4,9,3,9,101,2,9,9,4,9,3,9,1002,9,2,9,4,9,3,9,1001,9,1,9,4,9,3,9,1001,9,2,9,4,9,99,3,9,102,2,9,9,4,9,3,9,101,2,9,9,4,9,3,9,101,2,9,9,4,9,3,9,1001,9,1,9,4,9,3,9,102,2,9,9,4,9,3,9,101,2,9,9,4,9,3,9,1002,9,2,9,4,9,3,9,101,1,9,9,4,9,3,9,101,2,9,9,4,9,3,9,101,2,9,9,4,9,99,3,9,101,2,9,9,4,9,3,9,102,2,9,9,4,9,3,9,101,1,9,9,4,9,3,9,101,2,9,9,4,9,3,9,1002,9,2,9,4,9,3,9,101,2,9,9,4,9,3,9,1002,9,2,9,4,9,3,9,102,2,9,9,4,9,3,9,1001,9,1,9,4,9,3,9,101,2,9,9,4,9,99,3,9,102,2,9,9,4,9,3,9,102,2,9,9,4,9,3,9,101,1,9,9,4,9,3,9,1002,9,2,9,4,9,3,9,102,2,9,9,4,9,3,9,1002,9,2,9,4,9,3,9,1001,9,2,9,4,9,3,9,101,2,9,9,4,9,3,9,101,2,9,9,4,9,3,9,1001,9,1,9,4,9,99,3,9,1002,9,2,9,4,9,3,9,101,2,9,9,4,9,3,9,1001,9,1,9,4,9,3,9,101,1,9,9,4,9,3,9,101,2,9,9,4,9,3,9,102,2,9,9,4,9,3,9,102,2,9,9,4,9,3,9,1002,9,2,9,4,9,3,9,1001,9,1,9,4,9,3,9,102,2,9,9,4,9,99]
 
-class YieldingIntcode(IntcodeWithAddressing):
-    def __init__(self, *a, **kw):
-        super(YieldingIntcode, self).__init__(*a, **kw)
-        self._yield = False
-
-    def reset(self, *a, **kw):
-        self._yield = False
-        return super(YieldingIntcode, self).reset(*a, **kw)
-
-    def is_halted(self):
-        return not super(YieldingIntcode, self).should_compute_next()
-
-    def should_compute_next(self):
-        if self.is_halted():
-            return False
-        return not self._yield
-
-    def compute(self):
-        self._yield = False
-        return super(YieldingIntcode, self).compute()
-
-    def return_value(self):
-        return self.outputs[-1]
-
-    def read_input(self, *a, **kw):
-        if self.verbose:
-            print("READ", self._in_idx, self.inputs)
-        return super(YieldingIntcode, self).read_input(*a, **kw)
-
-    def write_output(self, *a, **kw):
-        self._yield = True
-        val = super(YieldingIntcode, self).write_output(*a, **kw)
-        if self.verbose:
-            print("WRITE", self.outputs)
-        return val
 
 def compute(program, phases, feedback=False):
     vms = []
     inputs = []
     for ph in phases:
         inputs.append(ph)
-        vm = YieldingIntcode(program, inputs)
+        vm = Intcode(program, inputs)
         inputs = vm.outputs
         vms.append(vm)
 
@@ -59,10 +24,10 @@ def compute(program, phases, feedback=False):
         for vm in vms:
             if vm.verbose:
                 print("START VM", vm.inputs)
-            vm.compute()
+            vm.compute_til_yield()
             if vm.verbose:
                 print("YIELD VM", vm.outputs)
-    return vms[-1].return_value()
+    return vms[-1].outputs[-1]
 
 def max_value(program, phases, feedback=False):
     pairs = ((ph, compute(program, ph, feedback)) for ph in itertools.permutations(phases))
