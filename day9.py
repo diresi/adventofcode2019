@@ -23,10 +23,18 @@ def test():
     vm.compute()
     assert vm.outputs == [3601950151]
 
+    vm = Intcode(PROGRAM, [2])
+    vm.compute()
+    assert vm.outputs == [64236]
+
 def main():
     vm = Intcode(PROGRAM, [1])
     vm.compute()
     print("day 9/1", vm.outputs)
+
+    vm = Intcode(PROGRAM, [2])
+    vm.compute()
+    print("day 9/2", vm.outputs)
 
     test()
 
